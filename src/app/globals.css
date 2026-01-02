@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   THEME (white + soft orange)
+   ========================= */
+:root {
+  --bg: 255 255 255;
+  --surface: 255 255 255;
+  --border: 255 237 213;   /* orange-100 */
+  --text: 15 23 42;        /* slate-900 */
+  --muted: 71 85 105;      /* slate-600 */
+  --accent: 251 146 60;    /* orange-400 */
+  --accentSoft: 255 237 213; /* orange-100 */
+  --accentRing: 254 215 170; /* orange-200 */
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  color: rgb(var(--text));
+  background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 146, 60, 0.10), transparent 55%),
+              linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,1));
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+/* Utility: nicer focus for links */
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(254, 215, 170, 0.75);
+  border-radius: 0.75rem;
+}
