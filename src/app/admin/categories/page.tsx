@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createCategory, deleteCategory, updateCategory } from "./actions";
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage(){
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
 
   return (

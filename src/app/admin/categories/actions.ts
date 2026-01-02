@@ -4,38 +4,71 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 const CategorySchema = z.object({
-  name: z.string().min(2).max(50),
+    name: z.string().min(2).max(50),
 });
 
-export async function createCategory(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const parsed = CategorySchema.safeParse({ name });
-  if (!parsed.success) return { ok: false as const, error: "Nombre inválido." };
-
-  const slug = slugify(parsed.data.name);
-
-  await prisma.category.create({ data: { name: parsed.data.name, slug } });
-  revalidatePath("/admin/categories");
-  return { ok: true as const };
+function err(msg: string): never {
+    redirect(`/admin/categories?error=${encodeURIComponent(msg)}`);
 }
 
-export async function updateCategory(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const parsed = CategorySchema.safeParse({ name });
-  if (!parsed.success) return { ok: false as const, error: "Nombre inválido." };
-
-  const slug = slugify(parsed.data.name);
-  await prisma.category.update({ where: { id }, data: { name: parsed.data.name, slug } });
-  revalidatePath("/admin/categories");
-  return { ok: true as const };
+function ok(): never {
+    redirect(`/admin/categories?ok=1`);
 }
 
-export async function deleteCategory(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  await prisma.category.delete({ where: { id } });
-  revalidatePath("/admin/categories");
-  return { ok: true as const };
+export async function createCategory(formData: FormData): Promise<void> {
+    const name = String(formData.get("name") ?? "").trim();
+    const parsed = CategorySchema.safeParse({ name });
+    if (!parsed.success) err("Nombre inválido.");
+
+    const slug = slugify(parsed.data.name);
+
+    try {
+        await prisma.category.create({ data: { name: parsed.data.name, slug } });
+    } catch {
+        err("No se pudo crear. ¿Ya existe una categoría con ese nombre?");
+    }
+
+    revalidatePath("/admin/categories");
+    ok();
+}
+
+export async function updateCategory(formData: FormData): Promise<void> {
+    const id = String(formData.get("id") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+
+    if (!id) err("ID inválido.");
+
+    const parsed = CategorySchema.safeParse({ name });
+    if (!parsed.success) err("Nombre inválido.");
+
+    const slug = slugify(parsed.data.name);
+
+    try {
+        await prisma.category.update({
+            where: { id },
+            data: { name: parsed.data.name, slug },
+        });
+    } catch {
+        err("No se pudo actualizar la categoría.");
+    }
+
+    revalidatePath("/admin/categories");
+    ok();
+}
+
+export async function deleteCategory(formData: FormData): Promise<void> {
+    const id = String(formData.get("id") ?? "").trim();
+    if (!id) err("ID inválido.");
+
+    try {
+        await prisma.category.delete({ where: { id } });
+    } catch {
+        err("No se pudo eliminar la categoría (puede estar en uso).");
+    }
+
+    revalidatePath("/admin/categories");
+    ok();
 }
