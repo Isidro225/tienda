@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function Topbar() {
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
 
-  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || "/logo.png"; // centered logo (env overrides local)
+  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || "/Logo 2 .png"; // centered logo (env overrides local)
   return (
       <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
           <div className="relative mx-auto flex h-20 max-w-6xl items-center px-4 md:h-24">
@@ -23,7 +23,7 @@ export async function Topbar() {
                 <img
                     src={logoUrl}
                     alt="Logo"
-                    className="h-16 w-auto object-contain md:h-20"
+                    className="h-24 w-auto object-contain md:h-24"
                 />
             </div>
 

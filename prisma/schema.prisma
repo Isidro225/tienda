@@ -39,6 +39,7 @@ model Product {
   orderItems  OrderItem[]
   slug        String?     @unique
 
+  @@index([name])
   @@index([categoryId])
 }
 
