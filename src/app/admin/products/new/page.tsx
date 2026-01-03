@@ -18,7 +18,6 @@ export default async function NewProductPage() {
   async function createAndRedirect(fd: FormData) {
     "use server";
     const res = await createProduct(fd);
-    if (res.ok) redirect("/admin/products");
     return res;
   }
 

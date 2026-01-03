@@ -20,7 +20,7 @@ type Props = {
     imageUrl: string;
     isActive: boolean;
   };
-  action: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  action: (formData: FormData) => void | Promise<void>
 };
 
 export function ProductForm({ mode, categories, defaultValues, action }: Props) {
@@ -32,7 +32,6 @@ export function ProductForm({ mode, categories, defaultValues, action }: Props) 
       action={async (fd) => {
         fd.set("imageUrl", imageUrl);
         const res = await action(fd);
-        if (!res.ok) setError(res.error ?? "No se pudo guardar.");
       }}
       className="grid gap-4"
     >

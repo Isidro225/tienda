@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ButtonLink, Button } from "@/components/ui/Button";
 import { formatArsFromCents } from "@/lib/money";
-import { deleteProduct } from "./actions";
+import { toggleProductActive } from "./actions";
 
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({
@@ -60,10 +60,11 @@ export default async function ProductsPage() {
                         >
                           Editar
                         </Link>
-                        <form action={deleteProduct}>
-                          <input type="hidden" name="id" value={p.id} />
-                          <Button type="submit" variant="danger">Eliminar</Button>
-                        </form>
+                          <form action={toggleProductActive}>
+                              <input type="hidden" name="id" value={p.id} />
+                              <input type="hidden" name="next" value={String(!p.isActive)} />
+                              <button type="submit">{p.isActive ? "Desactivar" : "Activar"}</button>
+                          </form>
                       </div>
                     </td>
                   </tr>
