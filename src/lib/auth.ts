@@ -1,57 +1,59 @@
-import "server-only";
-import { cookies } from "next/headers";
-import { SignJWT, jwtVerify } from "jose";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
-const COOKIE_NAME = "pan_session";
+const COOKIE = process.env.SESSION_COOKIE_NAME || "alsedo_session";
 
-function getSecret() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) throw new Error("Missing AUTH_SECRET in env.");
-  return new TextEncoder().encode(secret);
+export function genOtpCode() {
+    return String(Math.floor(100000 + Math.random() * 900000)); // 6 dígitos
 }
 
-export type SessionPayload = {
-  uid: string;
-  role: "ADMIN" | "USER";
-  email: string;
-};
-
-export async function createSession(payload: SessionPayload) {
-  const token = await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(getSecret());
-
-  cookies().set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-  });
+export function sha256(input: string) {
+    return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-export function destroySession() {
-  cookies().set(COOKIE_NAME, "", { httpOnly: true, path: "/", maxAge: 0 });
+export function randomToken() {
+    return crypto.randomBytes(32).toString("base64url");
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, getSecret());
-    return payload as unknown as SessionPayload;
-  } catch {
-    return null;
-  }
+export async function createSession(userId: string) {
+    const token = randomToken();
+    const tokenHash = sha256(token);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14); // 14 días
+
+    await prisma.session.create({
+        data: { userId, tokenHash, expiresAt },
+    });
+
+    cookies().set(COOKIE, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        expires: expiresAt,
+    });
 }
 
-export async function requireAdmin() {
-  const session = await getSession();
-  if (!session || session.role !== "ADMIN") return null;
-  // Optionally re-check user existence
-  const user = await prisma.user.findUnique({ where: { id: session.uid } });
-  if (!user || user.role !== "ADMIN") return null;
-  return session;
+export async function getCurrentUser() {
+    const token = cookies().get(COOKIE)?.value;
+    if (!token) return null;
+
+    const tokenHash = sha256(token);
+    const session = await prisma.session.findUnique({
+        where: { tokenHash },
+        include: { user: true },
+    });
+
+    if (!session) return null;
+    if (session.expiresAt < new Date()) return null;
+
+    return session.user;
+}
+
+export async function logout() {
+    const token = cookies().get(COOKIE)?.value;
+    if (token) {
+        await prisma.session.deleteMany({ where: { tokenHash: sha256(token) } });
+    }
+    cookies().delete(COOKIE);
 }

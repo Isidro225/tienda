@@ -44,6 +44,7 @@ export default async function EditProductPage({
                             price: String((product.priceCents / 100).toFixed(2)),
                             categoryId: product.categoryId,
                             imageUrl: product.imageUrl ?? "",
+                            brand: product.brand ?? "",
                             isActive: product.isActive,
                         }}
                         action={updateProduct}

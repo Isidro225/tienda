@@ -19,6 +19,7 @@ type Props = {
     categoryId: string;
     imageUrl: string;
     isActive: boolean;
+    brand: string;
   };
   action: (formData: FormData) => void | Promise<void>
 };

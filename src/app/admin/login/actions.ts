@@ -1,29 +1,31 @@
 "use server";
 
-import bcrypt from "bcryptjs";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { createSession, destroySession } from "@/lib/auth";
+import { createSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
 
-export async function login(formData: FormData) {
-  const email = String(formData.get("email") ?? "").toLowerCase().trim();
-  const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/admin");
-
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || user.role !== "ADMIN") {
-    // Avoid leaking existence
-    redirect("/admin/login?error=1");
-  }
-
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) redirect("/admin/login?error=1");
-
-  await createSession({ uid: user.id, role: user.role, email: user.email });
-  redirect(next);
+function fail(msg: string): never {
+    redirect(`/admin/login?error=${encodeURIComponent(msg)}`);
 }
 
-export async function logout() {
-  destroySession();
-  redirect("/admin/login");
+export async function adminLogin(formData: FormData): Promise<void> {
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const password = String(formData.get("password") ?? "");
+
+    if (!email || !password) return fail("Completá email y contraseña.");
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return fail("Credenciales inválidas.");
+
+    if (user.role !== "ADMIN") return fail("Tu usuario no tiene permisos de administrador.");
+
+    // ✅ si por algún motivo no tiene password (null/empty), no dejamos pasar
+    if (!user.password) return fail("Credenciales inválidas.");
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return fail("Credenciales inválidas.");
+
+    await createSession(user.id);
+    redirect("/admin");
 }

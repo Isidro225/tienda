@@ -8,12 +8,45 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String // bcrypt hash
-  role      String   @default("USER")
+  id       String  @id @default(cuid())
+  email    String? @unique
+  password String? // si querés seguir usando admin por password, dejalo
+  role     String  @default("USER")
+
+  phone           String?   @unique
+  phoneVerifiedAt DateTime?
+  name            String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model PhoneOtp {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+model Session {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Category {
@@ -39,8 +72,23 @@ model Product {
   orderItems  OrderItem[]
   slug        String?     @unique
 
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  @@index([brandId])
   @@index([name])
   @@index([categoryId])
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([name])
 }
 
 model Order {
