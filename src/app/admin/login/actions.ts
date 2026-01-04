@@ -2,8 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+
+const SESSION_COOKIE = "alsedo_session";
 
 function fail(msg: string): never {
     redirect(`/admin/login?error=${encodeURIComponent(msg)}`);
@@ -28,4 +31,18 @@ export async function adminLogin(formData: FormData): Promise<void> {
 
     await createSession(user.id);
     redirect("/admin");
+}
+
+export async function logout(): Promise<void> {
+    const jar = await cookies();
+
+    jar.set(SESSION_COOKIE, "", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 0,
+    });
+
+    redirect("/admin/login");
 }
