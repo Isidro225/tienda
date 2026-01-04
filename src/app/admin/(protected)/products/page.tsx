@@ -70,7 +70,7 @@ export default async function ProductsPage({
                     </div>
                 </div>
 
-                {/* ✅ Filtros (server, sin JS) */}
+                {/* Filtros (server, sin JS) */}
                 <form className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                     <input
                         name="q"
@@ -192,7 +192,6 @@ export default async function ProductsPage({
                         </table>
                     </div>
 
-                    {/* ✅ Paginación abajo */}
                     {totalPages > 1 && (
                         <div className="border-t border-app-border bg-white px-5 py-4">
                             <Pagination

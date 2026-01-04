@@ -111,3 +111,28 @@ export async function updateProduct(formData: FormData): Promise<void> {
     revalidatePath(`/admin/products/${id}/edit`);
     ok();
 }
+
+
+export async function toggleProductActive(formData: FormData): Promise<void> {
+    const id = String(formData.get("id") ?? "").trim();
+    if (!id) return err("ID inválido.");
+
+    const nextRaw =
+        String(formData.get("next") ?? "").trim() ||
+        String(formData.get("isActive") ?? "").trim() ||
+        String(formData.get("active") ?? "").trim();
+
+    if (nextRaw !== "true" && nextRaw !== "false") return err("Valor inválido.");
+
+    try {
+        await prisma.product.update({
+            where: { id },
+            data: { isActive: nextRaw === "true" },
+        });
+    } catch {
+        return err("No se pudo actualizar el estado.");
+    }
+
+    revalidatePath("/admin/products");
+    ok();
+}
